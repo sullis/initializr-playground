@@ -15,9 +15,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -108,16 +111,26 @@ class SpringBoot3ProjectGenerationTest {
                 .contains(MAVEN_WRAPPER_VERSION);
     }
 
-    @Test
-    void generatesMainApplicationClass() {
-        ProjectStructure project = tester.generate(mavenJavaDescription());
+    static Stream<Arguments> buildSystems() {
+        return Stream.of(
+                Arguments.arguments("Maven", BuildSystem.forId(MavenBuildSystem.ID)),
+                Arguments.arguments("Gradle/Groovy", BuildSystem.forIdAndDialect(GradleBuildSystem.ID, GradleBuildSystem.DIALECT_GROOVY)),
+                Arguments.arguments("Gradle/Kotlin", BuildSystem.forIdAndDialect(GradleBuildSystem.ID, GradleBuildSystem.DIALECT_KOTLIN))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("buildSystems")
+    void generatesMainApplicationClass(String label, BuildSystem buildSystem) {
+        ProjectStructure project = tester.generate(buildDescription(buildSystem));
         assertThat(project).asJvmModule(JAVA_21)
                 .hasMainSource(PACKAGE_NAME, "MyAppApplication");
     }
 
-    @Test
-    void generatesTestClass() {
-        ProjectStructure project = tester.generate(mavenJavaDescription());
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("buildSystems")
+    void generatesTestClass(String label, BuildSystem buildSystem) {
+        ProjectStructure project = tester.generate(buildDescription(buildSystem));
         assertThat(project).asJvmModule(JAVA_21)
                 .hasTestSource(PACKAGE_NAME, "MyAppApplicationTests");
     }
@@ -159,20 +172,6 @@ class SpringBoot3ProjectGenerationTest {
     }
 
     @Test
-    void generatesGroovyDslGradleMainApplicationClass() {
-        ProjectStructure project = tester.generate(gradleGroovyJavaDescription());
-        assertThat(project).asJvmModule(JAVA_21)
-                .hasMainSource(PACKAGE_NAME, "MyAppApplication");
-    }
-
-    @Test
-    void generatesGroovyDslGradleTestClass() {
-        ProjectStructure project = tester.generate(gradleGroovyJavaDescription());
-        assertThat(project).asJvmModule(JAVA_21)
-                .hasTestSource(PACKAGE_NAME, "MyAppApplicationTests");
-    }
-
-    @Test
     void generatesKotlinDslGradleBuildFile() {
         ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
         assertThat(project).hasKotlinDslGradleBuild();
@@ -186,17 +185,5 @@ class SpringBoot3ProjectGenerationTest {
                 .contains(GRADLE_8_WRAPPER_VERSION);
     }
 
-    @Test
-    void generatesKotlinDslGradleMainApplicationClass() {
-        ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
-        assertThat(project).asJvmModule(JAVA_21)
-                .hasMainSource(PACKAGE_NAME, "MyAppApplication");
-    }
-
-    @Test
-    void generatesKotlinDslGradleTestClass() {
-        ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
-        assertThat(project).asJvmModule(JAVA_21)
-                .hasTestSource(PACKAGE_NAME, "MyAppApplicationTests");
-    }
 }
+
