@@ -119,6 +119,11 @@
         <version>${logback.version}</version>
         <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.spring.initializr</groupId>
+      <artifactId>initializr-generator-spring</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
