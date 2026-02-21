@@ -193,6 +193,8 @@ class SpringBoot3ProjectGenerationTest {
     void generatesKotlinDslGradleWrapper() {
         ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
         assertThat(project).hasGradleWrapper();
+        assertThat(project).textFile("gradle/wrapper/gradle-wrapper.properties")
+                .contains("gradle-8.14.4-bin.zip");
     }
 
     @Test
