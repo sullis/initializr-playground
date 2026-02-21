@@ -1,6 +1,7 @@
 package io.github.sullis.initializr;
 
 import io.spring.initializr.generator.buildsystem.BuildSystem;
+import io.spring.initializr.generator.buildsystem.gradle.GradleBuildSystem;
 import io.spring.initializr.generator.buildsystem.maven.MavenBuildSystem;
 import io.spring.initializr.generator.language.Language;
 import io.spring.initializr.generator.packaging.Packaging;
@@ -124,5 +125,87 @@ class SpringBoot3ProjectGenerationTest {
         assertThat(project).hasMavenBuild();
         assertThat(project).mavenBuild()
                 .hasParent("org.springframework.boot", "spring-boot-starter-parent", bootVersion);
+    }
+
+    private MutableProjectDescription gradleGroovyJavaDescription() {
+        MutableProjectDescription description = new MutableProjectDescription();
+        description.setPlatformVersion(Version.parse(SPRING_BOOT_3_VERSION));
+        description.setBuildSystem(BuildSystem.forIdAndDialect(GradleBuildSystem.ID, GradleBuildSystem.DIALECT_GROOVY));
+        description.setLanguage(JAVA_21);
+        description.setPackaging(Packaging.forId("jar"));
+        description.setGroupId(GROUP_ID);
+        description.setArtifactId(ARTIFACT_ID);
+        description.setName("my-app");
+        description.setDescription("Demo Spring Boot 3 project");
+        description.setApplicationName("MyAppApplication");
+        description.setPackageName(PACKAGE_NAME);
+        return description;
+    }
+
+    private MutableProjectDescription gradleKotlinJavaDescription() {
+        MutableProjectDescription description = new MutableProjectDescription();
+        description.setPlatformVersion(Version.parse(SPRING_BOOT_3_VERSION));
+        description.setBuildSystem(BuildSystem.forIdAndDialect(GradleBuildSystem.ID, GradleBuildSystem.DIALECT_KOTLIN));
+        description.setLanguage(JAVA_21);
+        description.setPackaging(Packaging.forId("jar"));
+        description.setGroupId(GROUP_ID);
+        description.setArtifactId(ARTIFACT_ID);
+        description.setName("my-app");
+        description.setDescription("Demo Spring Boot 3 project");
+        description.setApplicationName("MyAppApplication");
+        description.setPackageName(PACKAGE_NAME);
+        return description;
+    }
+
+    @Test
+    void generatesGroovyDslGradleBuildFile() {
+        ProjectStructure project = tester.generate(gradleGroovyJavaDescription());
+        assertThat(project).hasGroovyDslGradleBuild();
+    }
+
+    @Test
+    void generatesGroovyDslGradleWrapper() {
+        ProjectStructure project = tester.generate(gradleGroovyJavaDescription());
+        assertThat(project).hasGradleWrapper();
+    }
+
+    @Test
+    void generatesGroovyDslGradleMainApplicationClass() {
+        ProjectStructure project = tester.generate(gradleGroovyJavaDescription());
+        assertThat(project).asJvmModule(JAVA_21)
+                .hasMainSource(PACKAGE_NAME, "MyAppApplication");
+    }
+
+    @Test
+    void generatesGroovyDslGradleTestClass() {
+        ProjectStructure project = tester.generate(gradleGroovyJavaDescription());
+        assertThat(project).asJvmModule(JAVA_21)
+                .hasTestSource(PACKAGE_NAME, "MyAppApplicationTests");
+    }
+
+    @Test
+    void generatesKotlinDslGradleBuildFile() {
+        ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
+        assertThat(project).hasKotlinDslGradleBuild();
+    }
+
+    @Test
+    void generatesKotlinDslGradleWrapper() {
+        ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
+        assertThat(project).hasGradleWrapper();
+    }
+
+    @Test
+    void generatesKotlinDslGradleMainApplicationClass() {
+        ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
+        assertThat(project).asJvmModule(JAVA_21)
+                .hasMainSource(PACKAGE_NAME, "MyAppApplication");
+    }
+
+    @Test
+    void generatesKotlinDslGradleTestClass() {
+        ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
+        assertThat(project).asJvmModule(JAVA_21)
+                .hasTestSource(PACKAGE_NAME, "MyAppApplicationTests");
     }
 }
