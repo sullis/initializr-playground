@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SpringBoot3ProjectGenerationTest {
 
     private static final String SPRING_BOOT_3_3_VERSION = "3.3.8";
-    private static final String SPRING_BOOT_3_VERSION = "3.4.3";
+    private static final String SPRING_BOOT_3_4_VERSION = "3.4.3";
     private static final String GROUP_ID = "com.example";
     private static final String ARTIFACT_ID = "my-app";
     private static final String PACKAGE_NAME = "com.example.myapp";
@@ -42,7 +42,7 @@ class SpringBoot3ProjectGenerationTest {
 
     @BeforeEach
     void setUp() {
-        this.tester = testerFor(SPRING_BOOT_3_VERSION, tempDir);
+        this.tester = testerFor(SPRING_BOOT_3_4_VERSION, tempDir);
     }
 
     private ProjectGeneratorTester testerFor(String bootVersion, Path dir) {
@@ -56,8 +56,12 @@ class SpringBoot3ProjectGenerationTest {
     }
 
     private MutableProjectDescription buildDescription(BuildSystem buildSystem) {
+        return buildDescription(buildSystem, SPRING_BOOT_3_4_VERSION);
+    }
+
+    private MutableProjectDescription buildDescription(BuildSystem buildSystem, String bootVersion) {
         MutableProjectDescription description = new MutableProjectDescription();
-        description.setPlatformVersion(Version.parse(SPRING_BOOT_3_VERSION));
+        description.setPlatformVersion(Version.parse(bootVersion));
         description.setBuildSystem(buildSystem);
         description.setLanguage(JAVA_21);
         description.setPackaging(Packaging.forId("jar"));
@@ -92,7 +96,7 @@ class SpringBoot3ProjectGenerationTest {
     void generatesSpringBootParentInPom() {
         ProjectStructure project = tester.generate(mavenJavaDescription());
         assertThat(project).mavenBuild()
-                .hasParent("org.springframework.boot", "spring-boot-starter-parent", SPRING_BOOT_3_VERSION);
+                .hasParent("org.springframework.boot", "spring-boot-starter-parent", SPRING_BOOT_3_4_VERSION);
     }
 
     @Test
@@ -136,22 +140,23 @@ class SpringBoot3ProjectGenerationTest {
     }
 
     @Test
-    void generatesGitIgnore() {
+    void generatesMavenGitIgnore() {
         assertThat(tester.generate(mavenJavaDescription())).textFile(".gitignore")
                 .contains("target/");
+    }
+
+    @Test
+    void generatesGradleGitIgnore() {
         assertThat(tester.generate(gradleGroovyJavaDescription())).textFile(".gitignore")
                 .contains(".gradle");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { SPRING_BOOT_3_3_VERSION, SPRING_BOOT_3_VERSION })
+    @ValueSource(strings = { SPRING_BOOT_3_3_VERSION, SPRING_BOOT_3_4_VERSION })
     void generatesMavenProjectForMultipleSpringBoot3Versions(String bootVersion, @TempDir Path versionTempDir) {
         ProjectGeneratorTester versionedTester = testerFor(bootVersion, versionTempDir);
 
-        MutableProjectDescription description = mavenJavaDescription();
-        description.setPlatformVersion(Version.parse(bootVersion));
-
-        ProjectStructure project = versionedTester.generate(description);
+        ProjectStructure project = versionedTester.generate(buildDescription(BuildSystem.forId(MavenBuildSystem.ID), bootVersion));
         assertThat(project).hasMavenBuild();
         assertThat(project).mavenBuild()
                 .hasParent("org.springframework.boot", "spring-boot-starter-parent", bootVersion);
@@ -163,9 +168,17 @@ class SpringBoot3ProjectGenerationTest {
         assertThat(project).hasGroovyDslGradleBuild();
     }
 
-    @Test
-    void generatesGroovyDslGradleWrapper() {
-        ProjectStructure project = tester.generate(gradleGroovyJavaDescription());
+    static Stream<Arguments> gradleBuildSystems() {
+        return Stream.of(
+                Arguments.arguments("Gradle/Groovy", BuildSystem.forIdAndDialect(GradleBuildSystem.ID, GradleBuildSystem.DIALECT_GROOVY)),
+                Arguments.arguments("Gradle/Kotlin", BuildSystem.forIdAndDialect(GradleBuildSystem.ID, GradleBuildSystem.DIALECT_KOTLIN))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("gradleBuildSystems")
+    void generatesGradleWrapper(String label, BuildSystem buildSystem) {
+        ProjectStructure project = tester.generate(buildDescription(buildSystem));
         assertThat(project).hasGradleWrapper();
         assertThat(project).textFile("gradle/wrapper/gradle-wrapper.properties")
                 .contains(GRADLE_8_WRAPPER_VERSION);
@@ -175,14 +188,6 @@ class SpringBoot3ProjectGenerationTest {
     void generatesKotlinDslGradleBuildFile() {
         ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
         assertThat(project).hasKotlinDslGradleBuild();
-    }
-
-    @Test
-    void generatesKotlinDslGradleWrapper() {
-        ProjectStructure project = tester.generate(gradleKotlinJavaDescription());
-        assertThat(project).hasGradleWrapper();
-        assertThat(project).textFile("gradle/wrapper/gradle-wrapper.properties")
-                .contains(GRADLE_8_WRAPPER_VERSION);
     }
 
 }
