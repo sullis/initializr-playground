@@ -169,10 +169,7 @@ class SpringBoot3ProjectGenerationTest {
     }
 
     static Stream<Arguments> gradleBuildSystems() {
-        return Stream.of(
-                Arguments.arguments("Gradle/Groovy", BuildSystem.forIdAndDialect(GradleBuildSystem.ID, GradleBuildSystem.DIALECT_GROOVY)),
-                Arguments.arguments("Gradle/Kotlin", BuildSystem.forIdAndDialect(GradleBuildSystem.ID, GradleBuildSystem.DIALECT_KOTLIN))
-        );
+        return buildSystems().filter(a -> !((String) a.get()[0]).equals("Maven"));
     }
 
     @ParameterizedTest(name = "{0}")
