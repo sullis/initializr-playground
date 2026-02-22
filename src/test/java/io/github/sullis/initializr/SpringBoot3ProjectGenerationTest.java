@@ -125,16 +125,16 @@ class SpringBoot3ProjectGenerationTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("buildSystems")
-    void generatesMainApplicationClass(String label, BuildSystem buildSystem) {
-        ProjectStructure project = tester.generate(buildDescription(buildSystem));
+    void generatesMainApplicationClass(String label, BuildSystem buildSystem, @TempDir Path dir) {
+        ProjectStructure project = testerFor(SPRING_BOOT_3_4_VERSION, dir).generate(buildDescription(buildSystem));
         assertThat(project).asJvmModule(JAVA_21)
                 .hasMainSource(PACKAGE_NAME, "MyAppApplication");
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("buildSystems")
-    void generatesTestClass(String label, BuildSystem buildSystem) {
-        ProjectStructure project = tester.generate(buildDescription(buildSystem));
+    void generatesTestClass(String label, BuildSystem buildSystem, @TempDir Path dir) {
+        ProjectStructure project = testerFor(SPRING_BOOT_3_4_VERSION, dir).generate(buildDescription(buildSystem));
         assertThat(project).asJvmModule(JAVA_21)
                 .hasTestSource(PACKAGE_NAME, "MyAppApplicationTests");
     }
@@ -151,7 +151,7 @@ class SpringBoot3ProjectGenerationTest {
                 .contains(".gradle");
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "Spring Boot {0}")
     @ValueSource(strings = { SPRING_BOOT_3_3_VERSION, SPRING_BOOT_3_4_VERSION })
     void generatesMavenProjectForMultipleSpringBoot3Versions(String bootVersion, @TempDir Path versionTempDir) {
         ProjectGeneratorTester versionedTester = testerFor(bootVersion, versionTempDir);
@@ -177,8 +177,8 @@ class SpringBoot3ProjectGenerationTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("gradleBuildSystems")
-    void generatesGradleWrapper(String label, BuildSystem buildSystem) {
-        ProjectStructure project = tester.generate(buildDescription(buildSystem));
+    void generatesGradleWrapper(String label, BuildSystem buildSystem, @TempDir Path dir) {
+        ProjectStructure project = testerFor(SPRING_BOOT_3_4_VERSION, dir).generate(buildDescription(buildSystem));
         assertThat(project).hasGradleWrapper();
         assertThat(project).textFile("gradle/wrapper/gradle-wrapper.properties")
                 .contains(GRADLE_8_WRAPPER_VERSION);
